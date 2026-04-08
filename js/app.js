@@ -54,6 +54,11 @@ async function startAnalysis() {
   }
   window.appState.topic = topic;
 
+  // Select mock domain data based on topic (if in mock mode)
+  if (CONFIG.USE_MOCK_DATA) {
+    setMockForTopic(topic);
+  }
+
   // Show processing screen
   showScreen('screen-processing');
   initProcessingUI(topic);
