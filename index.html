@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ResearchPulse — Autonomous Research Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════ LANDING PAGE ═══════════════════════════════ -->
+<div id="screen-landing" class="screen active">
+  <div class="landing-bg">
+    <div class="grid-lines"></div>
+    <div class="pulse-orb pulse-orb--1"></div>
+    <div class="pulse-orb pulse-orb--2"></div>
+  </div>
+  <nav class="landing-nav">
+    <div class="nav-logo">
+      <span class="logo-mark">RP</span>
+      <span class="logo-text">ResearchPulse</span>
+    </div>
+    <span class="nav-badge">Autonomous Research Intelligence</span>
+  </nav>
+  <div class="landing-hero">
+    <div class="hero-eyebrow">
+      <span class="eyebrow-dot"></span>
+      <span>Agentic · Deep · Autonomous</span>
+    </div>
+    <h1 class="hero-title">One topic.<br /><em>Full research intelligence.</em></h1>
+    <p class="hero-sub">
+      ResearchPulse autonomously decides what to search, how deep to go, when to stop —
+      then delivers a publication-grade literature review, knowledge graph, contradiction
+      analysis, and multi-format outputs in ~90 seconds.
+    </p>
+    <div class="input-block">
+      <div class="input-wrapper">
+        <input
+          id="topic-input"
+          type="text"
+          class="topic-input"
+          placeholder="e.g. AI in medical diagnosis"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button class="analyze-btn" id="analyze-btn" onclick="startAnalysis()">
+          <span class="btn-text">Analyze</span>
+          <span class="btn-arrow">→</span>
+        </button>
+      </div>
+      <div class="advanced-row">
+        <label class="advanced-label">
+          <span>Search depth</span>
+          <div class="depth-control">
+            <button class="depth-btn" onclick="adjustDepth(-1)">−</button>
+            <span id="depth-display" class="depth-val">2</span>
+            <button class="depth-btn" onclick="adjustDepth(1)">+</button>
+          </div>
+          <span class="depth-hint">iterations (1–3)</span>
+        </label>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feat-chip"><span class="feat-icon feat-icon--graph"></span>Knowledge graph</div>
+      <div class="feat-chip"><span class="feat-icon feat-icon--contra"></span>Contradiction detection</div>
+      <div class="feat-chip"><span class="feat-icon feat-icon--gap"></span>Gap scorecard</div>
+      <div class="feat-chip"><span class="feat-icon feat-icon--trend"></span>Trend analysis</div>
+      <div class="feat-chip"><span class="feat-icon feat-icon--slides"></span>Slides &amp; flashcards</div>
+      <div class="feat-chip"><span class="feat-icon feat-icon--pdf"></span>PDF export</div>
+    </div>
+  </div>
+  <div class="landing-footer">
+    <span>Powered by Claude AI · n8n Workflows · Supabase</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ PROCESSING SCREEN ═══════════════════════════════ -->
+<div id="screen-processing" class="screen">
+  <div class="proc-container">
+    <div class="proc-header">
+      <div class="proc-logo">
+        <span class="logo-mark logo-mark--sm">RP</span>
+        <span class="proc-topic-label" id="proc-topic-label">Analysing...</span>
+      </div>
+      <div class="proc-step-indicator" id="proc-step-indicator">Step 1 / 5</div>
+    </div>
+    <div class="proc-progress-bar">
+      <div class="proc-progress-fill" id="proc-progress-fill" style="width:0%"></div>
+    </div>
+    <div class="proc-stats-row">
+      <div class="proc-stat">
+        <span class="proc-stat-num" id="stat-papers">0</span>
+        <span class="proc-stat-lbl">Papers fetched</span>
+      </div>
+      <div class="proc-stat">
+        <span class="proc-stat-num" id="stat-depth">1</span>
+        <span class="proc-stat-lbl">Current depth</span>
+      </div>
+      <div class="proc-stat">
+        <span class="proc-stat-num" id="stat-nodes">0</span>
+        <span class="proc-stat-lbl">Graph nodes</span>
+      </div>
+      <div class="proc-stat">
+        <span class="proc-stat-num" id="stat-contra">0</span>
+        <span class="proc-stat-lbl">Contradictions</span>
+      </div>
+    </div>
+    <div class="log-terminal" id="log-terminal">
+      <div class="log-terminal-bar">
+        <span class="term-dot term-dot--red"></span>
+        <span class="term-dot term-dot--amber"></span>
+        <span class="term-dot term-dot--green"></span>
+        <span class="term-title">agent.log</span>
+      </div>
+      <div class="log-body" id="log-body"></div>
+    </div>
+    <div class="proc-stepper">
+      <div class="proc-step" id="pstep-0"><span class="pstep-dot"></span><span class="pstep-lbl">Search</span></div>
+      <div class="pstep-line"></div>
+      <div class="proc-step" id="pstep-1"><span class="pstep-dot"></span><span class="pstep-lbl">Evaluate</span></div>
+      <div class="pstep-line"></div>
+      <div class="proc-step" id="pstep-2"><span class="pstep-dot"></span><span class="pstep-lbl">Graph</span></div>
+      <div class="pstep-line"></div>
+      <div class="proc-step" id="pstep-3"><span class="pstep-dot"></span><span class="pstep-lbl">Analyse</span></div>
+      <div class="pstep-line"></div>
+      <div class="proc-step" id="pstep-4"><span class="pstep-dot"></span><span class="pstep-lbl">Report</span></div>
+    </div>
+    <p class="proc-error" id="proc-error" style="display:none"></p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ RESULTS DASHBOARD ═══════════════════════════════ -->
+<div id="screen-results" class="screen">
+  <!-- Top bar -->
+  <header class="results-header">
+    <div class="results-logo">
+      <span class="logo-mark logo-mark--sm">RP</span>
+      <div class="results-title-block">
+        <span class="results-topic-title" id="results-topic-title">Research complete</span>
+        <div class="results-meta-chips" id="results-meta-chips"></div>
+      </div>
+    </div>
+    <div class="results-actions">
+      <button class="action-btn" onclick="downloadPDF()" id="pdf-btn">↓ PDF</button>
+      <button class="action-btn action-btn--ghost" onclick="resetToLanding()">New search</button>
+    </div>
+  </header>
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab active" data-tab="graph" onclick="switchTab('graph')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="3" cy="7" r="2.5" stroke="currentColor"/><circle cx="11" cy="3" r="2" stroke="currentColor"/><circle cx="11" cy="11" r="2" stroke="currentColor"/><line x1="5" y1="6.2" x2="9.2" y2="3.8" stroke="currentColor" stroke-width="1.2"/><line x1="5" y1="7.8" x2="9.2" y2="10.2" stroke="currentColor" stroke-width="1.2"/></svg>
+      Graph
+    </button>
+    <button class="tab" data-tab="report" onclick="switchTab('report')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="1" width="10" height="12" rx="1.5" stroke="currentColor"/><line x1="4.5" y1="4.5" x2="9.5" y2="4.5" stroke="currentColor" stroke-width="1.2"/><line x1="4.5" y1="7" x2="9.5" y2="7" stroke="currentColor" stroke-width="1.2"/><line x1="4.5" y1="9.5" x2="7.5" y2="9.5" stroke="currentColor" stroke-width="1.2"/></svg>
+      Report
+    </button>
+    <button class="tab" data-tab="slides" onclick="switchTab('slides')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2.5" width="12" height="9" rx="1.5" stroke="currentColor"/><line x1="4" y1="5.5" x2="10" y2="5.5" stroke="currentColor" stroke-width="1.2"/><line x1="4" y1="8" x2="8" y2="8" stroke="currentColor" stroke-width="1.2"/></svg>
+      Slides
+    </button>
+    <button class="tab" data-tab="flashcards" onclick="switchTab('flashcards')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="3.5" width="9" height="7" rx="1.5" stroke="currentColor"/><rect x="3.5" y="1.5" width="9" height="7" rx="1.5" stroke="currentColor" fill="none"/></svg>
+      Flashcards
+    </button>
+    <button class="tab" data-tab="mindmap" onclick="switchTab('mindmap')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2" stroke="currentColor"/><line x1="5.2" y1="5.8" x2="2.5" y2="3" stroke="currentColor" stroke-width="1.1"/><line x1="8.8" y1="5.8" x2="11.5" y2="3" stroke="currentColor" stroke-width="1.1"/><line x1="8.8" y1="8.2" x2="11.5" y2="11" stroke="currentColor" stroke-width="1.1"/><line x1="5.2" y1="8.2" x2="2.5" y2="11" stroke="currentColor" stroke-width="1.1"/></svg>
+      Mindmap
+    </button>
+  </div>
+
+  <!-- Tab panels -->
+  <div class="tab-panels">
+
+    <!-- GRAPH TAB -->
+    <div class="tab-panel active" id="panel-graph">
+      <div class="graph-toolbar">
+        <div class="graph-legend">
+          <span class="legend-title">Nodes:</span>
+          <span class="leg-item"><span class="leg-circle" style="background:#4A9EE8;border-color:#1A6FC4"></span>Paper</span>
+          <span class="leg-item"><span class="leg-circle" style="background:#9E9E9E;border-color:#616161"></span>Concept</span>
+          <span class="leg-item"><span class="leg-circle" style="background:#66BB6A;border-color:#388E3C"></span>Method</span>
+          <span class="legend-sep"></span>
+          <span class="legend-title">Edges:</span>
+          <span class="leg-item"><span class="leg-line" style="background:#EF5350"></span>Contradicts</span>
+          <span class="leg-item"><span class="leg-line" style="background:#66BB6A"></span>Supports</span>
+          <span class="leg-item"><span class="leg-line" style="background:#FFA726"></span>Extends</span>
+          <span class="leg-item"><span class="leg-line" style="background:#78909C"></span>Cites</span>
+          <span class="leg-item"><span class="leg-line" style="background:#42A5F5"></span>Dataset</span>
+        </div>
+        <button class="graph-reset-btn" onclick="resetGraph()">Reset zoom</button>
+      </div>
+      <div id="graph-container" class="graph-container">
+        <svg id="graph-svg"></svg>
+        <!-- Tooltip -->
+        <div id="graph-tooltip" class="graph-tooltip" style="display:none"></div>
+        <!-- Contradiction popup -->
+        <div id="contra-popup" class="contra-popup" style="display:none">
+          <div class="contra-popup-head">
+            <div class="contra-popup-title">Contradiction detected</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="sev-badge" id="pop-sev-badge"></span>
+              <button class="contra-close" onclick="closeContraPopup()">×</button>
+            </div>
+          </div>
+          <div class="contra-vs-grid">
+            <div class="contra-side">
+              <div class="contra-paper" id="pop-paper-a"></div>
+              <div class="contra-claim" id="pop-claim-a"></div>
+            </div>
+            <div class="contra-divider">VS</div>
+            <div class="contra-side">
+              <div class="contra-paper" id="pop-paper-b"></div>
+              <div class="contra-claim" id="pop-claim-b"></div>
+            </div>
+          </div>
+          <div class="contra-implication" id="pop-implication"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORT TAB -->
+    <div class="tab-panel" id="panel-report">
+      <div class="report-container" id="report-container">
+        <div class="report-section" id="rs-executive">
+          <div class="rs-label">Executive summary</div>
+          <div id="rs-exec-content" class="rs-prose"></div>
+        </div>
+        <div class="report-section" id="rs-snapshot">
+          <div class="rs-label">Field snapshot</div>
+          <div id="rs-snapshot-content" class="snap-grid"></div>
+        </div>
+        <div class="report-section" id="rs-contradictions">
+          <div class="rs-label">Contradictions</div>
+          <div id="rs-contra-content"></div>
+        </div>
+        <div class="report-section" id="rs-gaps">
+          <div class="rs-label">Research gap scorecard</div>
+          <div id="rs-gaps-content"></div>
+        </div>
+        <div class="report-section" id="rs-trends">
+          <div class="rs-label">Trend analysis</div>
+          <div id="rs-trends-content"></div>
+        </div>
+        <div class="report-section" id="rs-frontier">
+          <div class="rs-label">Frontier research directions</div>
+          <div id="rs-frontier-content"></div>
+        </div>
+        <div class="report-section" id="rs-meth">
+          <div class="rs-label">Methodology comparison table</div>
+          <div class="meth-table-wrap">
+            <table class="meth-table" id="meth-table">
+              <thead>
+                <tr>
+                  <th class="sortable" onclick="sortMeth(0)">Paper <span class="sort-arrow">↕</span></th>
+                  <th class="sortable" onclick="sortMeth(1)">Year <span class="sort-arrow">↕</span></th>
+                  <th class="sortable" onclick="sortMeth(2)">Method <span class="sort-arrow">↕</span></th>
+                  <th class="sortable" onclick="sortMeth(3)">Dataset <span class="sort-arrow">↕</span></th>
+                  <th class="sortable" onclick="sortMeth(4)">Metric <span class="sort-arrow">↕</span></th>
+                  <th class="sortable" onclick="sortMeth(5)">Result <span class="sort-arrow">↕</span></th>
+                </tr>
+              </thead>
+              <tbody id="meth-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="report-section" id="rs-citations">
+          <div class="rs-label">Citation index</div>
+          <div id="rs-cite-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDES TAB -->
+    <div class="tab-panel" id="panel-slides">
+      <div class="slides-loading" id="slides-loading" style="display:none">
+        <div class="tab-spinner"></div>
+        <span>Generating slides from report...</span>
+      </div>
+      <div class="slides-container" id="slides-container"></div>
+    </div>
+
+    <!-- FLASHCARDS TAB -->
+    <div class="tab-panel" id="panel-flashcards">
+      <div class="flashcards-loading" id="flashcards-loading" style="display:none">
+        <div class="tab-spinner"></div>
+        <span>Generating flashcards from report...</span>
+      </div>
+      <div class="flashcards-wrapper" id="flashcards-wrapper">
+        <div class="fc-header">
+          <span class="fc-progress-label" id="fc-progress">Card 1 / 15</span>
+          <span class="fc-hint-label">Click card to flip · Arrow keys to navigate</span>
+        </div>
+        <div class="fc-stage" id="fc-stage" onclick="flipCard()">
+          <div class="fc-inner" id="fc-inner">
+            <div class="fc-face fc-front">
+              <div class="fc-side-label">Question</div>
+              <div class="fc-content" id="fc-front-text"></div>
+              <div class="fc-flip-hint">Tap to reveal</div>
+            </div>
+            <div class="fc-face fc-back">
+              <div class="fc-side-label">Answer</div>
+              <div class="fc-content" id="fc-back-text"></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-nav">
+          <button class="fc-nav-btn" onclick="prevCard()">← Previous</button>
+          <div class="fc-dots" id="fc-dots"></div>
+          <button class="fc-nav-btn" onclick="nextCard()">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MINDMAP TAB -->
+    <div class="tab-panel" id="panel-mindmap">
+      <div class="mindmap-loading" id="mindmap-loading" style="display:none">
+        <div class="tab-spinner"></div>
+        <span>Generating mindmap from report...</span>
+      </div>
+      <div class="mindmap-wrapper" id="mindmap-wrapper">
+        <div class="mm-toolbar">
+          <button class="mm-btn" onclick="mmExpandAll()">Expand all</button>
+          <button class="mm-btn" onclick="mmCollapseAll()">Collapse all</button>
+        </div>
+        <div class="mm-tree" id="mm-tree"></div>
+      </div>
+    </div>
+
+  </div><!-- end tab-panels -->
+</div><!-- end screen-results -->
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/report.js"></script>
+<script src="js/representations.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
