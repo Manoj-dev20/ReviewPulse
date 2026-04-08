@@ -45,7 +45,7 @@ const CONFIG = {
   // ── Feature flags ──────────────────────────────────────────────
   // Set to true to use mock data instead of real backend
   // Useful for demos when n8n/Supabase aren't connected
-  USE_MOCK_DATA: false,
+  USE_MOCK_DATA: true,
 };
 
 // Derived full URLs (don't edit these)
